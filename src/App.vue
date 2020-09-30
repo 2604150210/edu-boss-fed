@@ -1,16 +1,22 @@
 <template>
 <div id="app">
-  <h1>大前端学习</h1>
-  <router-view />
-
+  <Layout v-if="authorized" />
+  <router-view  v-else/>
 </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
+import Layout from '@/layout/index.vue'
 
 export default Vue.extend({
-  name: 'App'
+  name: 'App',
+  components: { Layout },
+  computed: {
+    authorized () {
+      return this.$route.path !== '/login'
+    }
+  }
 })
 </script>
 
