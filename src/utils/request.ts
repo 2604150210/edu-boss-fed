@@ -47,7 +47,6 @@ request.interceptors.request.use(function (config) {
 let isRefreshing = false // 控制刷新 token 的状态
 let requests: (() => void)[] = [] // 存储刷新 token 期间过来的 401 请求
 request.interceptors.response.use(function (response) { // 状态码为 2xx 都会进入这里
-  console.log('请求响应成功了', response)
   return response
 }, async function (error) { // 超过 2xx 状态码都在这里
   console.dir('请求响应失败了', error)
