@@ -1,5 +1,5 @@
 <template>
-  <div class="resource">
+  <div class="course">
     <el-card class="box-card">
       <div slot="header" class="clearfix header">
         <el-form :inline="true" ref="form" :model="form" class="demo-form-inline">
@@ -17,7 +17,9 @@
             <el-button type="primary" :disabled="isLoading" @click="onSubmit">查询</el-button>
           </el-form-item>
         </el-form>
-        <el-button type="primary">+ 新建课程</el-button>
+        <el-button type="primary" @click="$router.push({
+          name: 'course-create'
+        })">+ 新建课程</el-button>
       </div>
       <el-table
       :data="courses"
