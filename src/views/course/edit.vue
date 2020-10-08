@@ -2,7 +2,7 @@
   <div class="course-create">
     <el-card class="box-card">
       <div slot="header" class="clearfix">
-        <span>添加课程</span>
+        <span>编辑课程</span>
       </div>
       <el-form
         :model="form"
@@ -97,7 +97,7 @@
 <script>
 import Vue from 'vue'
 import Editor from '@tinymce/tinymce-vue'
-import { saveOrUpdateCourse } from '@/services/course'
+import { saveOrUpdateCourse, getCourseById } from '@/services/course'
 export default Vue.extend({
   name: 'CourseCreate',
   components: {
@@ -138,7 +138,19 @@ export default Vue.extend({
       }
     }
   },
+  created () {
+    this.loadCourse()
+  },
   methods: {
+    async loadCourse () {
+      const { courseId } = this.$route.params
+      const { data: { data } } = await getCourseById(courseId)
+      data.description = data.teacherDTO.description
+      data.position = data.teacherDTO.position
+      data.teacherName = data.teacherDTO.teacherName
+      delete data.teacherDTO
+      this.form = data
+    },
     onSubmit () {
       // 1. 表单验证
       this.$refs.form.validate(async valid => {
@@ -146,7 +158,7 @@ export default Vue.extend({
           const value = { ...this.form }
           value.activityCourseDTO = {}
           value.teacherDTO = {
-            courseId: null,
+            courseId: this.form.id,
             description: this.form.description,
             position: this.form.position,
             teacherName: this.form.teacherName

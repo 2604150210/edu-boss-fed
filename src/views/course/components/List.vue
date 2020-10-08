@@ -4,7 +4,7 @@
       <div slot="header" class="clearfix header">
         <el-form :inline="true" ref="form" :model="form" class="demo-form-inline">
           <el-form-item prop="courseName" label="课程名称">
-            <el-input v-model="form.courseName"></el-input>
+            <el-input clearable v-model="form.courseName"></el-input>
           </el-form-item>
           <el-form-item prop="status" label="状态">
             <el-select clearable v-model="form.status">
@@ -53,7 +53,7 @@
         label="操作">
         <template slot-scope="scope">
         <el-button :type="!scope.row.status ? 'success': 'danger'" size="small" @click="changeState(scope.row.id, 1 - scope.row.status)">{{scope.row.status ? '下架': '上架'}}</el-button>
-        <el-button @click="handleClick(scope.row.id)" size="small">编辑</el-button>
+        <el-button @click="handleEdit(scope.row.id)" size="small">编辑</el-button>
         <el-button @click="handleClick(scope.row.id)" size="small">内容管理</el-button>
       </template>
       </el-table-column>
@@ -87,7 +87,6 @@ export default Vue.extend({
       this.isLoading = true
       try {
         const { data } = await getQueryCourses(this.form)
-        console.log('data', data)
         this.courses = data.data.records
       } catch (e) {
         console.log('e', e)
@@ -110,6 +109,14 @@ export default Vue.extend({
         this.$message.success('操作成功！')
         this.loadCourses()
       }
+    },
+    handleEdit (courseId) {
+      this.$router.push({
+        name: 'course-edit',
+        params: {
+          courseId
+        }
+      })
     }
   }
 })
