@@ -29,3 +29,13 @@ export const getUserRole = (id: number) => {
     url: `/boss/role/user/${id}`
   })
 }
+
+export const forbidUser = (userId: number) => {
+  return request({
+    method: 'POST',
+    url: '/boss/role/forbidUser',
+    data: {
+      userId
+    }
+  })
+}

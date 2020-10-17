@@ -37,7 +37,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 作业接口文档地址 
 
-http://113.31.104.154:8081/doc.html#/home
+http://eduboss.lagou.com/front/doc.html#/home
 
 http://113.31.104.154:8010/doc.html#/home
 

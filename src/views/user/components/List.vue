@@ -3,11 +3,20 @@
     <el-card class="box-card">
       <div slot="header" class="clearfix">
         <el-form :inline="true" ref="form" :model="form" class="demo-form-inline">
-          <el-form-item prop="name" label="资源名称">
-            <el-input v-model="form.name"></el-input>
+          <el-form-item prop="phone" label="手机号">
+            <el-input v-model="form.phone" placeholder="请输入手机号"></el-input>
           </el-form-item>
-          <el-form-item prop="url" label="资源路径">
-            <el-input v-model="form.url"></el-input>
+          <el-form-item prop="dateTime" label="注册时间">
+              <el-date-picker
+                v-model="form.dateTime"
+                type="daterange"
+                align="right"
+                unlink-panels
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                :picker-options="pickerOptions">
+              </el-date-picker>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" :disabled="isLoading" @click="onSubmit">查询</el-button>
@@ -63,7 +72,7 @@
         align="center"
         label="操作">
         <template slot-scope="scope">
-        <el-button type="danger" @click="handleForbid(scope.row.id)" size="small">禁用</el-button>
+        <el-button v-if="scope.row.status === 'ENABLE'" type="danger" @click="handleForbid(scope.row.id)" size="small">禁用</el-button>
         <el-button type="primary" size="small" @click="handleRole(scope.row.id)">分配角色</el-button>
       </template>
       </el-table-column>
@@ -83,18 +92,14 @@
       title="分配角色"
       :visible.sync="dialogVisible"
       width="30%">
-      <el-form ref="roleForm" :model="roleForm" label-width="80px">
-      <el-form-item>
-        <el-select v-model="roleForm.roleIdList" multiple placeholder="请选择">
-          <el-option
-            v-for="item in options"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value">
-          </el-option>
-        </el-select>
-      </el-form-item>
-      </el-form>
+      <el-select width="100%" v-model="roleIdList" multiple placeholder="请选择">
+        <el-option
+          v-for="item in roles"
+          :key="item.id"
+          :label="item.name"
+          :value="item.id">
+        </el-option>
+      </el-select>
       <span slot="footer" class="dialog-footer">
         <el-button @click="dialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="submitRole">确 定</el-button>
@@ -106,7 +111,7 @@
 <script>
 import Vue from 'vue'
 import { getUserPages } from '@/services/user'
-import { allocateUserRoles, getAllRole, getUserRole } from '@/services/role'
+import { allocateUserRoles, getAllRole, getUserRole, forbidUser } from '@/services/role'
 
 Vue.filter('format', value => {
   const t = new Date(value)
@@ -118,21 +123,51 @@ export default Vue.extend({
     return {
       users: [],
       form: {
+        dateTime: '',
         name: '',
         pageSize: 10, // 每页数量
         currentPage: 1 // 当前页
       },
-      roleForm: {
-        roleIdList: []
-      },
+      roleIdList: [],
       roleArr: [],
       dialogVisible: false,
       total: 0,
-      isLoading: false
+      isLoading: false,
+      roles: [],
+      userRoles: [],
+      userId: null,
+      pickerOptions: {
+        shortcuts: [{
+          text: '最近一周',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+            picker.$emit('pick', [start, end])
+          }
+        }, {
+          text: '最近一个月',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+            picker.$emit('pick', [start, end])
+          }
+        }, {
+          text: '最近三个月',
+          onClick (picker) {
+            const end = new Date()
+            const start = new Date()
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+            picker.$emit('pick', [start, end])
+          }
+        }]
+      }
     }
   },
   created () {
     this.loadUsers()
+    this.loadRoles()
   },
   methods: {
     async loadUsers () {
@@ -142,8 +177,14 @@ export default Vue.extend({
       this.total = data.data.total
       this.isLoading = false
     },
+    async loadRoles () {
+      const { data: { data: roles } } = await getAllRole()
+      this.roles = roles
+    },
     onSubmit () {
       this.form.currentPage = 1
+      this.form.startCreateTime = this.form.dateTime[0]
+      this.form.endCreateTime = this.form.dateTime[1]
       this.loadUsers()
     },
     onReset () {
@@ -162,15 +203,41 @@ export default Vue.extend({
       this.loadUsers()
       console.log(`当前页: ${val}`)
     },
-    handleForbid (id) {
-      console.log('禁止', id)
+    async handleForbid (id) {
+      try {
+        const { data } = await forbidUser(id)
+        if (data.code === '000000') {
+          this.$message.success(data.mesg)
+          this.loadUsers()
+        } else {
+          this.$message.error(data.mesg)
+        }
+      } catch (e) {
+        console.log(e)
+      }
     },
-    handleRole (id) {
+    async handleRole (id) {
+      const { data: { data: roles } } = await getUserRole(id)
+      this.roleIdList = roles.map(item => item.id)
+      this.userId = id
       this.dialogVisible = true
-      console.log('分配角色', id)
     },
-    submitRole () {
-      this.dialogVisible = false
+    async submitRole () {
+      try {
+        const { data } = await allocateUserRoles({
+          userId: this.userId,
+          roleIdList: this.roleIdList
+        })
+        if (data.code === '000000') {
+          this.$message.success(data.mesg)
+          this.dialogVisible = false
+          this.loadUsers()
+        } else {
+          this.$message.error(data.mesg)
+        }
+      } catch (e) {
+        console.log(e)
+      }
     }
   }
 })
